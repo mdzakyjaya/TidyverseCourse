@@ -1,0 +1,18 @@
+---
+title: "dplyr and tidyr"
+author: "dzaky jaya"
+date: "2022-08-28"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Ok lets go
+```{r}
+print('hello')
+```
+
