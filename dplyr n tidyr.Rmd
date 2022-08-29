@@ -11,8 +11,66 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Ok lets go
+# Manipulate Data
+
+load library
+
 ```{r}
-print('hello')
+# library(tidyverse)
 ```
+
+load data
+
+```{r}
+df <- mpg
+print(df)
+
+# check null values
+any(is.na(df))
+
+# explore number of columns and rows
+ncol(df); nrow(df)
+
+# explore structure of a table
+str(df)
+
+# explore column names
+colnames(df)
+```
+
+## select()
+function to select column like select clause in SQL
+```{r}
+# extract specified column
+df %>% select(manufacturer, model, year, class)
+
+# extract matched criteria
+df %>% select(starts_with(match = "c"))
+
+df %>% select(contains("a"))
+
+# select using index
+df %>% select(2:5)
+
+# select last n columns (little tricky)
+df %>% select((ncol(df)-2):ncol(df)) # it will extract last 3 columns
+```
+
+## rename() and everything()
+everything is a function to grab all the remaining unspecified column
+```{r}
+# rename all column
+df1 <- df %>% rename(yes = everything())
+
+# using select and rename simultaneously
+df %>% select(mnfc = manufacturer, mod = model, display = displ, everything())
+# note that this code doesn't rename original data set, it just rename the displayed data, i.e aliases
+
+#to rename the original data set, use assign
+df <- df %>% rename(mnfc = manufacturer, mod = model)
+```
+
+
+
+
 
