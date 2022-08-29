@@ -39,7 +39,9 @@ colnames(df)
 ```
 
 ## select()
+
 function to select column like select clause in SQL
+
 ```{r}
 # extract specified column
 df %>% select(manufacturer, model, year, class)
@@ -57,7 +59,9 @@ df %>% select((ncol(df)-2):ncol(df)) # it will extract last 3 columns
 ```
 
 ## rename() and everything()
+
 everything is a function to grab all the remaining unspecified column
+
 ```{r}
 # rename all column
 df1 <- df %>% rename(yes = everything())
@@ -69,6 +73,112 @@ df %>% select(mnfc = manufacturer, mod = model, display = displ, everything())
 #to rename the original data set, use assign
 df <- df %>% rename(mnfc = manufacturer, mod = model)
 ```
+
+## mutate() and transmute()
+
+mutate is a function to create new variable in a data set\
+transmute is a function to create new variable in a data set, but it will remove all others variables\
+
+```{r}
+# create new variable
+df <- df %>% mutate(`avg mile per galon` = (cty+hwy)/2)
+
+df <- df %>% mutate(car = paste(mnfc, mod))
+
+df <- df %>% mutate(`cyl and trans` = paste(cyl, "cylinders and", trans, "transmissions"))
+```
+
+## filter() and slice()
+
+filter is a function to filter rows by criteria\
+slice is a function to filter rows by its indices
+
+```{r}
+# use same order logic as SQL logic
+df %>%  select(manufacturer, year, hwy) %>% filter(manufacturer %in% c("audi","ford"))
+
+# if we want to filter manufacturer but not want manufacturer to be displayed, then put the filter prior to select
+df %>% filter(manufacturer %in% c("audi","ford")) %>%  select(year, hwy)
+# if we want to filter manufacturer but not want manufacturer to be displayed but put the filter after select, it will cause an error
+
+# combining filter and select
+df %>%  select(manufacturer, year, hwy) %>% filter(manufacturer %in% c("audi","ford")) %>% group_by(manufacturer, year) %>% summarise(`avg mean` = mean(hwy))
+```
+
+slice()
+
+```{r}
+# get data from row 20 to 30
+df %>% slice(20:30)
+
+# combining slice and select
+df %>% select(manufacturer, model, year) %>% slice(20:30)
+```
+
+## arrange()
+
+just like `order by` clause in SQL\
+default ordering is ascending
+
+```{r}
+# order cty in asc and hwy in desc, then display 20 records
+print(df %>% arrange(cty, desc(hwy)), n=20)
+
+# using arrange in advance
+print(df %>% select(manufacturer, year, hwy) %>% group_by(manufacturer) %>% filter(year == 1999) %>% summarise(`average of hwy` = mean(hwy)) %>% arrange(desc(`average of hwy`)), n=5)
+```
+
+## distinct()
+
+just like `distinct` cluase in SQL
+
+```{r}
+df %>% distinct(manufacturer, year) %>% arrange(manufacturer, year)
+```
+
+## bind\_()
+
+binding either row(s) or column(s) just like rbind and cbind
+
+```{r}
+exmp <- data.frame(id = c(1,2,3), names = c("john", "michael", "aries"))
+
+exmp <- bind_rows(exmp, slice(exmp, 2:3))
+
+exmp <- arrange(exmp, id)
+```
+
+## sample_n() and sample_frac()
+
+`sample_n()` to sampling number of n rows\
+`sample_frac()` to sampling percent of rows
+
+```{r}
+# retrieve 20 samples from df without replacement
+sample_n(df, 20, replace = F)
+
+# retrieve 20% sample from df
+sample_frac(df, 0.2)
+```
+
+## summarise()
+
+used with aggregate function
+```{r}
+# count number of records and number of distinct cty records
+df %>% summarise(n(), n_distinct(cty))
+
+# count number of records in advance
+ini <- df %>% select(manufacturer, model) %>% group_by(manufacturer, model) %>% summarise(numrec = n())
+```
+
+
+
+
+
+
+
+
 
 
 
