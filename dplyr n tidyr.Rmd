@@ -169,12 +169,31 @@ used with aggregate function
 df %>% summarise(n(), n_distinct(cty))
 
 # count number of records in advance
-ini <- df %>% select(manufacturer, model) %>% group_by(manufacturer, model) %>% summarise(numrec = n())
+df %>% select(manufacturer, model) %>% group_by(manufacturer, model) %>% summarise(numrec = n())
+```
+the same approach with simpler code line is using `count()`
+
+## count()
+
+```{r}
+count(df, manufacturer, model) # will produce exactly same result as in second code line of summarise() part
+
+df %>% group_by(manufacturer) %>% summarise(n())
 ```
 
+```{r}
+df %>% group_by(manufacturer) %>% summarise(`min hwy` = min(hwy), `max hwy` = max(hwy),
+                                            `min cyl` = min(cyl), `max cyl` = max(cyl))
+```
 
+```{r}
+df %>% group_by(manufacturer, model, class, trans) %>% 
+        summarise(`mean hwy` = mean(hwy), cars = n()) %>% 
+        filter(`mean hwy` > 30) %>% 
+        arrange(desc(`mean hwy`)) %>% ungroup()
+```
 
-
+## pivot_longer() and pivot_wider()
 
 
 
