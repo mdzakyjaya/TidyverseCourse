@@ -256,6 +256,48 @@ sptdatedf %>% mutate_at(.vars = c("month", "date"),
 
 ## pull()
 
+extract column values as a vector
+```{r}
+df %>% pull(hwy)
+```
+
+## combining group_by and mutate
+
+```{r}
+df %>% group_by(manufacturer, model) %>% mutate(`avg hwy` = mean(hwy))
+
+# the different between combined group_by-mutate and group_by-summarise is, the first combine
+# also added summarised value to column for each corresponding row, while the other one only
+# summarise grouped rows without adding it to a column.
+
+df %>% group_by(manufacturer, model) %>% summarise(mean(hwy))
+```
+
+
+## case_when()
+
+just like `case when` in SQL
+```{r}
+# library data.table is loaded to use like clause like in SQL
+library(data.table)
+
+# create a column to identify the transmission type
+# whether automatic coded as AT or manual coded as MT
+df %>% mutate(`trans type` = case_when(
+        trans %like% "auto.*" ~ "AT",
+        trans %like% "manual.*" ~ "MT",
+        TRUE ~ "NA")
+)
+```
+
+
+
+## mutate FAMILY
+
+`mutate_all()` apply function to all columns\
+`mutate_if()` apply function over columns that meet condition\
+`mutate_at()` apply function to a specific columns
+
 
 
 
