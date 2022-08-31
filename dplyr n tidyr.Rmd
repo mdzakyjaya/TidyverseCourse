@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 load library
 
 ```{r}
-# library(tidyverse)
+library(tidyverse)
 ```
 
 load data
@@ -194,6 +194,67 @@ df %>% group_by(manufacturer, model, class, trans) %>%
 ```
 
 ## pivot_longer() and pivot_wider()
+
+transforming table from wide format to long format and vice versa.
+```{r}
+# create long table example
+long <- data.frame(id = 1:6, type = c("a", "b", "b", "c", "b", "a"),
+                   total = c(20, 40, 30, 45, 12, 35))
+
+# convert to wide format
+wide <- pivot_wider(long, names_from = type, values_from = total)
+
+# bring back wide to long
+wide %>% pivot_longer(cols = c("a", "b", "c"), names_to = "type", values_to = "total", values_drop_na = T)
+
+# play in advance
+play <- df %>% filter(manufacturer %in% c("jeep", "hyundai", "land rover")) %>% 
+        select(model, trans, hwy)
+
+wideplay <- play %>% group_by(model, trans) %>%  summarise(`avg hwy` = mean(hwy)) %>% 
+        pivot_wider(names_from = trans, values_from = `avg hwy`)
+
+#convert back with little trick
+wideplay %>% pivot_longer(cols = -model, # exclude column model and remain all the rest column
+                          names_to = "trans",
+                          values_to = "avg hwy",
+                          values_drop_na = T)
+```
+
+## separate() and unite()
+
+just like split and merge in excel\
+`separate`
+```{r}
+# create dates table just for example
+dates <- seq.Date(from = as.Date("2022-01-01"), to = as.Date("2022-12-31"), by = "day")
+# place in table format
+datedf <- data.frame(date = dates)
+
+sptdatedf <- datedf %>% separate(col = date, into = c("year", "month", "date"), sep = "-") %>% 
+        mutate(month = as.numeric(month), 
+               date = as.numeric(date)) # remove leading zeros
+
+# other ways to mutate
+datedf %>% separate(col = date, into = c("year", "month", "date"), sep = "-") %>% 
+        mutate_at(.vars = c("month", "date"), # determine what's columns to mutate
+                  .funs = as.numeric) # determine what kind of function to apply
+```
+
+`unite`
+```{r}
+# add leading zeros before merge dates columns
+sptdatedf %>% mutate(month = str_pad(width = 2, side = "left", string = month, pad = 0),
+                     date = str_pad(width = 2, string = date, side = "left", pad = 0)) %>% 
+        unite(col = "full dates", c(year,month,date), sep = "-", remove = F)
+
+# others way to adding leading zeros with mutate_at
+sptdatedf %>% mutate_at(.vars = c("month", "date"),
+                        .funs = str_pad, width = 2, side = "left", pad = 0) %>% 
+        unite(col = "full date", c("year", "month", "date"), sep = "-", remove = F)
+```
+
+## pull()
 
 
 
