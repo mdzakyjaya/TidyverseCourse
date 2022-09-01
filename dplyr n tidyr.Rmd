@@ -164,6 +164,7 @@ sample_frac(df, 0.2)
 ## summarise()
 
 used with aggregate function
+
 ```{r}
 # count number of records and number of distinct cty records
 df %>% summarise(n(), n_distinct(cty))
@@ -171,6 +172,7 @@ df %>% summarise(n(), n_distinct(cty))
 # count number of records in advance
 df %>% select(manufacturer, model) %>% group_by(manufacturer, model) %>% summarise(numrec = n())
 ```
+
 the same approach with simpler code line is using `count()`
 
 ## count()
@@ -196,6 +198,7 @@ df %>% group_by(manufacturer, model, class, trans) %>%
 ## pivot_longer() and pivot_wider()
 
 transforming table from wide format to long format and vice versa.
+
 ```{r}
 # create long table example
 long <- data.frame(id = 1:6, type = c("a", "b", "b", "c", "b", "a"),
@@ -225,6 +228,7 @@ wideplay %>% pivot_longer(cols = -model, # exclude column model and remain all t
 
 just like split and merge in excel\
 `separate`
+
 ```{r}
 # create dates table just for example
 dates <- seq.Date(from = as.Date("2022-01-01"), to = as.Date("2022-12-31"), by = "day")
@@ -242,6 +246,7 @@ datedf %>% separate(col = date, into = c("year", "month", "date"), sep = "-") %>
 ```
 
 `unite`
+
 ```{r}
 # add leading zeros before merge dates columns
 sptdatedf %>% mutate(month = str_pad(width = 2, side = "left", string = month, pad = 0),
@@ -257,6 +262,7 @@ sptdatedf %>% mutate_at(.vars = c("month", "date"),
 ## pull()
 
 extract column values as a vector
+
 ```{r}
 df %>% pull(hwy)
 ```
@@ -273,24 +279,49 @@ df %>% group_by(manufacturer, model) %>% mutate(`avg hwy` = mean(hwy))
 df %>% group_by(manufacturer, model) %>% summarise(mean(hwy))
 ```
 
-
 ## case_when()
 
 just like `case when` in SQL
+
 ```{r}
 # library data.table is loaded to use like clause like in SQL
 library(data.table)
 
 # create a column to identify the transmission type
 # whether automatic coded as AT or manual coded as MT
-df %>% mutate(`trans type` = case_when(
+df1 <- df %>% mutate(`trans type` = case_when(
         trans %like% "auto.*" ~ "AT",
         trans %like% "manual.*" ~ "MT",
         TRUE ~ "NA")
 )
 ```
 
+let's play
 
+```{r}
+df2 <- df1 %>% count(manufacturer, `trans type`) # long format
+# convert to wide format
+df2 %>% pivot_wider(names_from = `trans type`, values_from = n) # this result will similar
+# to this syntax:
+table(df1$manufacturer, df1$`trans type`)
+# but table function will cause 0 as a 0 numeric, whereas pivot function will cause 0 as null
+```
+
+## row_number()
+
+rank a row
+
+```{r}
+# adding id to car data
+df %>% mutate(`car id` = row_number()) %>% print(n = 20)
+```
+
+create a car id considering group
+
+```{r}
+# it will create incremented id in each group
+df %>% group_by(model) %>% mutate(`mod id` = row_number())
+```
 
 ## mutate FAMILY
 
@@ -298,11 +329,118 @@ df %>% mutate(`trans type` = case_when(
 `mutate_if()` apply function over columns that meet condition\
 `mutate_at()` apply function to a specific columns
 
+# let's get action with dplyr and tidyr
 
+## load data
 
+```{r}
+# install.packages("hflights")
+library(hflights)
 
+df <- hflights
+class(df)
+```
 
+## getting acquainted with the data
 
+```{r}
+glimpse(df)
+```
 
+there are more than 200 thousands records\
 
+## Checking null values
 
+```{r}
+# check globally
+anyNA(df) # or using
+any(is.na(df))
+
+# find the total number of missing values in each column
+colSums(is.na(df))
+
+# find only columns and its position that contains missing values
+which(colSums(is.na(df))>0)
+
+# display the names of columns that contains missing values
+names(which(colSums(is.na(df))>0))
+```
+
+another way to identify columns with null values
+
+```{r}
+colnames(df)[colSums(is.na(df))>0]
+```
+
+or using apply
+
+```{r}
+# apply(df, 2, anyNA)
+
+# which(apply(df, 2, anyNA))
+
+names(which(apply(df, 2, anyNA)))
+```
+
+but the third way take longer time to retrieve the results\
+\
+place the list of columns that contains null values in a tibble
+
+```{r}
+NullCol <- data.frame(col = names(which(colSums(is.na(df))>0)))
+```
+
+## adjust the appropriate format of each columns to ensure data integrity
+
+at the first step we see that some columns not formatted properly
+
+```{r}
+glimpse(df)
+```
+
+the year, month, and day columns should be formatted as date not integer instead.\
+but before formatting the columns, we have to merge these columns to make it as a full date column
+
+```{r}
+# add leading zeros to column month and dayofmonth
+df <- df %>% mutate_at(.vars = c("Month", "DayofMonth"),
+                 .funs = str_pad, width = 2, side = "left", pad = 0) %>%
+        # merge appropriate columns to create a full dates column
+        unite("Dates", c(Year, Month, DayofMonth), sep = "-")
+```
+
+after full dates column was generated, we convert the column's format from string to date format
+
+```{r}
+df$Dates <- as.POSIXct(df$Dates, "%Y-%m-%d")
+```
+
+## exploring data
+
+total flight for each carrier
+
+```{r}
+df %>% count(UniqueCarrier) %>% arrange(desc(n))
+```
+
+count the number of cancellation in each carrier
+
+```{r}
+df %>% count(UniqueCarrier, Cancelled) %>% 
+        filter(Cancelled == 1) %>% 
+        arrange(desc(n))
+```
+
+percentage of cancelled flight per carrier
+
+```{r}
+percent_of_cancel <- df %>% count(UniqueCarrier, Cancelled) %>% 
+        group_by(UniqueCarrier) %>% 
+        mutate(`total flights` = sum(n), 
+               percentage = round(n/`total flights`*100, 2)) %>% 
+        filter(Cancelled == 1) %>% select(UniqueCarrier, percentage) %>% 
+        arrange(desc(percentage)) %>% ungroup()
+```
+
+takeaway:\
+although XE is the carrier with the most number of cancelled flights among other carriers, but the rank of a percentage of its cancellation is no more than the top 50% among others.
