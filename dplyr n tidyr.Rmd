@@ -443,4 +443,30 @@ percent_of_cancel <- df %>% count(UniqueCarrier, Cancelled) %>%
 ```
 
 takeaway:\
-although XE is the carrier with the most number of cancelled flights among other carriers, but the rank of a percentage of its cancellation is no more than the top 50% among others.
+although XE is the carrier with the most number of cancelled flights among other carriers, but the rank of a percentage of its cancellation is no more than the top 50% among others.\
+\
+\
+\
+count flight per canceled code for each carriers
+
+```{r}
+numcancode <- df %>% count(UniqueCarrier, CancellationCode)
+
+numcancode %>% pivot_wider(names_from = CancellationCode, values_from = n)
+```
+
+the pivoting process will error because there is an empty value in cancellation code, thus we have to encoding the empty value, so that the pivoting process will succeed
+
+```{r}
+numcancode %>% #coded empty type of cancellation code
+        mutate(CancellationCode = case_when(CancellationCode == "" ~ "0",
+                                                   TRUE ~ CancellationCode)) %>% 
+        # pivoting the table
+        pivot_wider(names_from = CancellationCode, values_from = n, values_fill = 0)
+```
+
+another way to do the same thing is using `table()`
+
+```{r}
+table(df$UniqueCarrier, df$CancellationCode)
+```
