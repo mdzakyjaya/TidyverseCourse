@@ -102,7 +102,12 @@ dfcarrier %>% arrange(desc(totdist)) %>% mutate(rank = row_number(),
 
 # Exercise 3
 
-Modify your main flights table:  create date column by uniting columns: year, month, day of month  when uniting columns do not lose source columns (mutate each column - with slightly different name, before unite operation is executed)  you will need to parse date column after unite operation  also you should add leading zeros to month and day of month column before date is created  create columns: quarter, week
+Modify your main flights table:\
+ create date column by uniting columns: year, month, day of month\
+ when uniting columns do not lose source columns (mutate each column - with slightly different name, before unite operation is executed)\
+ you will need to parse date column after unite operation\
+ also you should add leading zeros to month and day of month column before date is created\
+ create columns: quarter, week
 
 ```{r}
 dfmod <- df %>% mutate_at(.vars = c("Month", "DayofMonth"), .funs = str_pad,
