@@ -1,0 +1,472 @@
+---
+title: "dplyr and tidyr"
+author: "dzaky jaya"
+date: "2022-08-28"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Manipulate Data
+
+load library
+
+```{r}
+library(tidyverse)
+```
+
+load data
+
+```{r}
+df <- mpg
+print(df)
+
+# check null values
+any(is.na(df))
+
+# explore number of columns and rows
+ncol(df); nrow(df)
+
+# explore structure of a table
+str(df)
+
+# explore column names
+colnames(df)
+```
+
+## select()
+
+function to select column like select clause in SQL
+
+```{r}
+# extract specified column
+df %>% select(manufacturer, model, year, class)
+
+# extract matched criteria
+df %>% select(starts_with(match = "c"))
+
+df %>% select(contains("a"))
+
+# select using index
+df %>% select(2:5)
+
+# select last n columns (little tricky)
+df %>% select((ncol(df)-2):ncol(df)) # it will extract last 3 columns
+```
+
+## rename() and everything()
+
+everything is a function to grab all the remaining unspecified column
+
+```{r}
+# rename all column
+df1 <- df %>% rename(yes = everything())
+
+# using select and rename simultaneously
+df %>% select(mnfc = manufacturer, mod = model, display = displ, everything())
+# note that this code doesn't rename original data set, it just rename the displayed data, i.e aliases
+
+#to rename the original data set, use assign
+df <- df %>% rename(mnfc = manufacturer, mod = model)
+```
+
+## mutate() and transmute()
+
+mutate is a function to create new variable in a data set\
+transmute is a function to create new variable in a data set, but it will remove all others variables\
+
+```{r}
+# create new variable
+df <- df %>% mutate(`avg mile per galon` = (cty+hwy)/2)
+
+df <- df %>% mutate(car = paste(mnfc, mod))
+
+df <- df %>% mutate(`cyl and trans` = paste(cyl, "cylinders and", trans, "transmissions"))
+```
+
+## filter() and slice()
+
+filter is a function to filter rows by criteria\
+slice is a function to filter rows by its indices
+
+```{r}
+# use same order logic as SQL logic
+df %>%  select(manufacturer, year, hwy) %>% filter(manufacturer %in% c("audi","ford"))
+
+# if we want to filter manufacturer but not want manufacturer to be displayed, then put the filter prior to select
+df %>% filter(manufacturer %in% c("audi","ford")) %>%  select(year, hwy)
+# if we want to filter manufacturer but not want manufacturer to be displayed but put the filter after select, it will cause an error
+
+# combining filter and select
+df %>%  select(manufacturer, year, hwy) %>% filter(manufacturer %in% c("audi","ford")) %>% group_by(manufacturer, year) %>% summarise(`avg mean` = mean(hwy))
+```
+
+slice()
+
+```{r}
+# get data from row 20 to 30
+df %>% slice(20:30)
+
+# combining slice and select
+df %>% select(manufacturer, model, year) %>% slice(20:30)
+```
+
+## arrange()
+
+just like `order by` clause in SQL\
+default ordering is ascending
+
+```{r}
+# order cty in asc and hwy in desc, then display 20 records
+print(df %>% arrange(cty, desc(hwy)), n=20)
+
+# using arrange in advance
+print(df %>% select(manufacturer, year, hwy) %>% group_by(manufacturer) %>% filter(year == 1999) %>% summarise(`average of hwy` = mean(hwy)) %>% arrange(desc(`average of hwy`)), n=5)
+```
+
+## distinct()
+
+just like `distinct` cluase in SQL
+
+```{r}
+df %>% distinct(manufacturer, year) %>% arrange(manufacturer, year)
+```
+
+## bind\_()
+
+binding either row(s) or column(s) just like rbind and cbind
+
+```{r}
+exmp <- data.frame(id = c(1,2,3), names = c("john", "michael", "aries"))
+
+exmp <- bind_rows(exmp, slice(exmp, 2:3))
+
+exmp <- arrange(exmp, id)
+```
+
+## sample_n() and sample_frac()
+
+`sample_n()` to sampling number of n rows\
+`sample_frac()` to sampling percent of rows
+
+```{r}
+# retrieve 20 samples from df without replacement
+sample_n(df, 20, replace = F)
+
+# retrieve 20% sample from df
+sample_frac(df, 0.2)
+```
+
+## summarise()
+
+used with aggregate function
+
+```{r}
+# count number of records and number of distinct cty records
+df %>% summarise(n(), n_distinct(cty))
+
+# count number of records in advance
+df %>% select(manufacturer, model) %>% group_by(manufacturer, model) %>% summarise(numrec = n())
+```
+
+the same approach with simpler code line is using `count()`
+
+## count()
+
+```{r}
+count(df, manufacturer, model) # will produce exactly same result as in second code line of summarise() part
+
+df %>% group_by(manufacturer) %>% summarise(n())
+```
+
+```{r}
+df %>% group_by(manufacturer) %>% summarise(`min hwy` = min(hwy), `max hwy` = max(hwy),
+                                            `min cyl` = min(cyl), `max cyl` = max(cyl))
+```
+
+```{r}
+df %>% group_by(manufacturer, model, class, trans) %>% 
+        summarise(`mean hwy` = mean(hwy), cars = n()) %>% 
+        filter(`mean hwy` > 30) %>% 
+        arrange(desc(`mean hwy`)) %>% ungroup()
+```
+
+## pivot_longer() and pivot_wider()
+
+transforming table from wide format to long format and vice versa.
+
+```{r}
+# create long table example
+long <- data.frame(id = 1:6, type = c("a", "b", "b", "c", "b", "a"),
+                   total = c(20, 40, 30, 45, 12, 35))
+
+# convert to wide format
+wide <- pivot_wider(long, names_from = type, values_from = total)
+
+# bring back wide to long
+wide %>% pivot_longer(cols = c("a", "b", "c"), names_to = "type", values_to = "total", values_drop_na = T)
+
+# play in advance
+play <- df %>% filter(manufacturer %in% c("jeep", "hyundai", "land rover")) %>% 
+        select(model, trans, hwy)
+
+wideplay <- play %>% group_by(model, trans) %>%  summarise(`avg hwy` = mean(hwy)) %>% 
+        pivot_wider(names_from = trans, values_from = `avg hwy`)
+
+#convert back with little trick
+wideplay %>% pivot_longer(cols = -model, # exclude column model and remain all the rest column
+                          names_to = "trans",
+                          values_to = "avg hwy",
+                          values_drop_na = T)
+```
+
+## separate() and unite()
+
+just like split and merge in excel\
+`separate`
+
+```{r}
+# create dates table just for example
+dates <- seq.Date(from = as.Date("2022-01-01"), to = as.Date("2022-12-31"), by = "day")
+# place in table format
+datedf <- data.frame(date = dates)
+
+sptdatedf <- datedf %>% separate(col = date, into = c("year", "month", "date"), sep = "-") %>% 
+        mutate(month = as.numeric(month), 
+               date = as.numeric(date)) # remove leading zeros
+
+# other ways to mutate
+datedf %>% separate(col = date, into = c("year", "month", "date"), sep = "-") %>% 
+        mutate_at(.vars = c("month", "date"), # determine what's columns to mutate
+                  .funs = as.numeric) # determine what kind of function to apply
+```
+
+`unite`
+
+```{r}
+# add leading zeros before merge dates columns
+sptdatedf %>% mutate(month = str_pad(width = 2, side = "left", string = month, pad = 0),
+                     date = str_pad(width = 2, string = date, side = "left", pad = 0)) %>% 
+        unite(col = "full dates", c(year,month,date), sep = "-", remove = F)
+
+# others way to adding leading zeros with mutate_at
+sptdatedf %>% mutate_at(.vars = c("month", "date"),
+                        .funs = str_pad, width = 2, side = "left", pad = 0) %>% 
+        unite(col = "full date", c("year", "month", "date"), sep = "-", remove = F)
+```
+
+## pull()
+
+extract column values as a vector
+
+```{r}
+df %>% pull(hwy)
+```
+
+## combining group_by and mutate
+
+```{r}
+df %>% group_by(manufacturer, model) %>% mutate(`avg hwy` = mean(hwy))
+
+# the different between combined group_by-mutate and group_by-summarise is, the first combine
+# also added summarised value to column for each corresponding row, while the other one only
+# summarise grouped rows without adding it to a column.
+
+df %>% group_by(manufacturer, model) %>% summarise(mean(hwy))
+```
+
+## case_when()
+
+just like `case when` in SQL
+
+```{r}
+# library data.table is loaded to use like clause like in SQL
+library(data.table)
+
+# create a column to identify the transmission type
+# whether automatic coded as AT or manual coded as MT
+df1 <- df %>% mutate(`trans type` = case_when(
+        trans %like% "auto.*" ~ "AT",
+        trans %like% "manual.*" ~ "MT",
+        TRUE ~ "NA")
+)
+```
+
+let's play
+
+```{r}
+df2 <- df1 %>% count(manufacturer, `trans type`) # long format
+# convert to wide format
+df2 %>% pivot_wider(names_from = `trans type`, values_from = n) # this result will similar
+# to this syntax:
+table(df1$manufacturer, df1$`trans type`)
+# but table function will cause 0 as a 0 numeric, whereas pivot function will cause 0 as null
+```
+
+## row_number()
+
+rank a row
+
+```{r}
+# adding id to car data
+df %>% mutate(`car id` = row_number()) %>% print(n = 20)
+```
+
+create a car id considering group
+
+```{r}
+# it will create incremented id in each group
+df %>% group_by(model) %>% mutate(`mod id` = row_number())
+```
+
+## mutate FAMILY
+
+`mutate_all()` apply function to all columns\
+`mutate_if()` apply function over columns that meet condition\
+`mutate_at()` apply function to a specific columns
+
+# let's get action with dplyr and tidyr
+
+## load data
+
+```{r}
+# install.packages("hflights")
+library(hflights)
+
+df <- hflights
+class(df)
+```
+
+## getting acquainted with the data
+
+```{r}
+glimpse(df)
+```
+
+there are more than 200 thousands records\
+
+## Checking null values
+
+```{r}
+# check globally
+anyNA(df) # or using
+any(is.na(df))
+
+# find the total number of missing values in each column
+colSums(is.na(df))
+
+# find only columns and its position that contains missing values
+which(colSums(is.na(df))>0)
+
+# display the names of columns that contains missing values
+names(which(colSums(is.na(df))>0))
+```
+
+another way to identify columns with null values
+
+```{r}
+colnames(df)[colSums(is.na(df))>0]
+```
+
+or using apply
+
+```{r}
+# apply(df, 2, anyNA)
+
+# which(apply(df, 2, anyNA))
+
+names(which(apply(df, 2, anyNA)))
+```
+
+but the third way take longer time to retrieve the results\
+\
+place the list of columns that contains null values in a tibble
+
+```{r}
+NullCol <- data.frame(col = names(which(colSums(is.na(df))>0)))
+```
+
+## adjust the appropriate format of each columns to ensure data integrity
+
+at the first step we see that some columns not formatted properly
+
+```{r}
+glimpse(df)
+```
+
+the year, month, and day columns should be formatted as date not integer instead.\
+but before formatting the columns, we have to merge these columns to make it as a full date column
+
+```{r}
+# add leading zeros to column month and dayofmonth
+df <- df %>% mutate_at(.vars = c("Month", "DayofMonth"),
+                 .funs = str_pad, width = 2, side = "left", pad = 0) %>%
+        # merge appropriate columns to create a full dates column
+        unite("Dates", c(Year, Month, DayofMonth), sep = "-")
+```
+
+after full dates column was generated, we convert the column's format from string to date format
+
+```{r}
+df$Dates <- as.POSIXct(df$Dates, "%Y-%m-%d")
+```
+
+## exploring data
+
+total flight for each carrier
+
+```{r}
+df %>% count(UniqueCarrier) %>% arrange(desc(n))
+```
+
+count the number of cancellation in each carrier
+
+```{r}
+df %>% count(UniqueCarrier, Cancelled) %>% 
+        filter(Cancelled == 1) %>% 
+        arrange(desc(n))
+```
+
+percentage of cancelled flight per carrier
+
+```{r}
+percent_of_cancel <- df %>% count(UniqueCarrier, Cancelled) %>% 
+        group_by(UniqueCarrier) %>% 
+        mutate(`total flights` = sum(n), 
+               percentage = round(n/`total flights`*100, 2)) %>% 
+        filter(Cancelled == 1) %>% select(UniqueCarrier, percentage) %>% 
+        arrange(desc(percentage)) %>% ungroup()
+```
+
+takeaway:\
+although XE is the carrier with the most number of cancelled flights among other carriers, but the rank of a percentage of its cancellation is no more than the top 50% among others.\
+\
+\
+\
+count flight per canceled code for each carriers
+
+```{r}
+numcancode <- df %>% count(UniqueCarrier, CancellationCode)
+
+numcancode %>% pivot_wider(names_from = CancellationCode, values_from = n)
+```
+
+the pivoting process will error because there is an empty value in cancellation code, thus we have to encoding the empty value, so that the pivoting process will succeed
+
+```{r}
+numcancode %>% #coded empty type of cancellation code
+        mutate(CancellationCode = case_when(CancellationCode == "" ~ "0",
+                                                   TRUE ~ CancellationCode)) %>% 
+        # pivoting the table
+        pivot_wider(names_from = CancellationCode, values_from = n, values_fill = 0)
+```
+
+another way to do the same thing is using `table()`
+
+```{r}
+table(df$UniqueCarrier, df$CancellationCode)
+```
