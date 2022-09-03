@@ -71,7 +71,7 @@ df %>% select(mnfc = manufacturer, mod = model, display = displ, everything())
 # note that this code doesn't rename original data set, it just rename the displayed data, i.e aliases
 
 #to rename the original data set, use assign
-df <- df %>% rename(mnfc = manufacturer, mod = model)
+# df <-df %>% rename(mnfc = manufacturer, mod = model)
 ```
 
 ## mutate() and transmute()
@@ -83,7 +83,7 @@ transmute is a function to create new variable in a data set, but it will remove
 # create new variable
 df <- df %>% mutate(`avg mile per galon` = (cty+hwy)/2)
 
-df <- df %>% mutate(car = paste(mnfc, mod))
+df <- df %>% mutate(car = paste(manufacturer, model))
 
 df <- df %>% mutate(`cyl and trans` = paste(cyl, "cylinders and", trans, "transmissions"))
 ```
@@ -451,7 +451,9 @@ count flight per canceled code for each carriers
 
 ```{r}
 numcancode <- df %>% count(UniqueCarrier, CancellationCode)
+```
 
+```{r, eval=FALSE}
 numcancode %>% pivot_wider(names_from = CancellationCode, values_from = n)
 ```
 
