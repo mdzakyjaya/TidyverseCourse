@@ -1,0 +1,47 @@
+---
+title: 'data import: readr and tibble'
+author: "Dzaky Jaya"
+date: "2022-09-03"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# tibble and triblle
+
+load packages
+```{r}
+library(tidyverse)
+```
+
+tibble
+```{r}
+tibble("v1" = 1:10,
+       "v2" = 10,
+       "v3" = v1*v2)
+```
+tribble
+```{r}
+tribble(~v1, ~v2, ~v3,
+        "x",  2 ,  4 ,
+        "y",  5 , 32 ,
+        "z",  3 , 23 )
+```
+tribble make a table like data entry in spreadsheet, while tibble make a table like row wise.
+
+
+
+
+
+
+
+
+
+
+
+
+
