@@ -33,15 +33,124 @@ tribble(~v1, ~v2, ~v3,
 ```
 tribble make a table like data entry in spreadsheet, while tibble make a table like row wise.
 
+# read_csv and read_csv2
 
+`read_csv` to `,` separated value\
+`read_csv2` to `;` separated value
 
+```{r}
+# list the files
+list.files("./02_05_read_files")
+```
 
+# verctor parsing
+parse_character
+```{r}
+parse_character(c("a", "b", "3"))
+```
+parse_logical
+```{r}
+parse_logical(c)
+```
+parse_double
+```{r}
+parse_double(c("11.2", "13.4"))
 
+# with different decimal mark
+parse_double(c("11,5", "13,4"),
+             locale = locale(decimal_mark = ","))
+```
 
+specify grouping mask
+```{r}
+parse_number("1,000.24", locale = locale(grouping_mark = ","))
+```
 
+# file parsing
+```{r}
+read_tsv("./02_05_read_files/mpg.tsv",
+         col_types = cols(
+                 manufacturer = col_character(),
+                 model = col_character(),
+                 trans = col_character(),
+                 drv = col_character(),
+                 fl = col_character(),
+                 class = col_character(),
+                 displ = col_double(),
+                 year = col_double(),
+                 cyl = col_double(),
+                 cty = col_double(),
+                 hwy = col_double(),
+         ))
+```
 
+# other usefull library for import data
+`rio`\
+`readxl`\
+`data.table`
+```{r}
+install.packages("rio")
+install.packages("readxl")
+install.packages("data.table")
+```
 
+# Exercise 2
+In this exercise you will import .csv file called flights_02.csv, which is located in zip file.
+When you are importing the file, try to consider the following:\
+ assign imported object to R object named df2\
+ for importing use function from library readr\
+ inside function for importing, define column parsing1\
+ maybe you should inspect the .csv file before actual import\
+ after the import, check structure of df2 object with str()
 
+```{r}
+df2 <- read_csv("./data_import/data_import/flights_02.csv") %>% 
+        unite(col = "Date", c(Year, Month, DayofMonth), sep = "-") %>% 
+        mutate(Date = lubridate::ymd(Date), FlightNum = as.integer(FlightNum))
 
+# to make date column appear first than the others
+df2 <- df2 %>% select(Date, everything())
+df2
+```
 
+# Exercise 3
+Now you will import .csv file called flights 03.csv. When you are importing the file, you
+should consider the following:\
+ assign imported object to R object named df3\
+ for importing use function from library readr\
+ inspect the .csv file before actual import\
+ function for import should include some additional import strategies (compared to previous example!)\
+ HINT: at the point of import: maybe you should parse all columns as characters\
+(col types = cols(.default = ”c”))\
+ HINT: then inside R you can convert column types and add column names, after the
+import operation is executed\
+ after the import, check structure of df3 object with str()
 
+```{r}
+df3 <- read_delim("./data_import/data_import/flights_03.csv", skip = 12, 
+                  col_names = c("UniqueCarrier", "FlightNum", "Date", 
+                                "Origin", "Dest", "Distance"),
+                  comment = "#", delim = "|", trim_ws = T)
+
+glimpse(df3)
+```
+
+# Exercise 4
+In the last exercise you will import .csv file called flights 04.csv, which is a larger flat file
+with several million rows:\
+ import file two times using readr library and data.table’s fread\
+ when importing with readr do column parsing at the point of import\
+ when importing with fread force all columns to be parsed as characters (colClasses =
+”character”)\
+ compare execution times for each importing strategy\
+\
+
+```{r}
+system.time(
+        read_csv2("./data_import/data_import/big_table_04.csv", 
+                 col_types = cols(.default = "c"))
+) ; system.time(
+        data.table::fread("./data_import/data_import/big_table_04.csv",
+                          colClasses = "character")
+)
+```
