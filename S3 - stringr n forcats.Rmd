@@ -1,0 +1,190 @@
+---
+title: 'Data Wrangling: stringr and forcats'
+author: "Dzaky Jaya"
+date: "2022-09-04"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+load("./strings/strings.RData")
+```
+
+# String Matching
+
+## str_detect()
+
+detect a pattern match inside given string.\
+similar to base R `grepl`\
+in some circumstance this function would seems similar to `like` clause in SQL\
+```{r}
+df <- ggplot2::mpg
+
+df %>% filter(trans %like% "auto") # retrieve all records with automatic transmissions
+# we can use str_detect to get same results
+df %>% filter(str_detect(trans, "auto"))
+```
+
+```{r}
+fruit[str_detect(fruit, "a")]
+# this way is similar to:
+fruit[grepl("a", fruit)]
+
+# get all fruit no contain letter "a"
+fruit[str_detect(fruit, "a", negate = T)]
+
+data.frame(fruit) %>% filter(str_detect(fruit, "a"))
+```
+
+
+## str_which()
+
+locate the indexes of strings, which contain a pattern match\
+similar to base R `grep`
+```{r}
+str_which(c("abcd", "pqrsa"), "a")
+```
+
+## str_count()
+
+count the number of pattern matches in given strings.
+```{r}
+data.frame(fruit) %>% filter(str_count(fruit, "a") >= 2)
+```
+
+
+## str_locate() and str_locate_all()
+
+locate the position(s) of pattern match(es) in given string.\
+`str_locate`: position of the first match\
+`str_locate_all`: position of all matches
+```{r}
+fruit.df %>% mutate(start= str_locate(fruit, pattern = "bl")[,"start"],
+                    end = str_locate(fruit, pattern = "bl")[,"end"])
+```
+
+```{r}
+str_locate_all(fruit, "bla")
+```
+
+# String Subsetting
+
+## str_sub()
+similar to base R `substr()`\
+extract part part of a string from a character vector
+```{r}
+str_sub(fruit, 1, 4) %>% tibble()
+
+words %>% str_sub(1, 1) %>% tibble()
+```
+
+## str_subset()
+
+return only the strings that contain pattern match
+```{r}
+str_subset(fruit, "bla")
+```
+
+## str_extract() & str_extract_all()
+
+return the first (or every) pattern match as a vector
+```{r}
+str_extract(fruit, "app")
+```
+
+```{r}
+# str_extract_all(fruit, "ap")
+```
+
+## str_match() & str_match_all()
+
+return the first (or every) pattern match found in each string, as a matrix for each group in pattern.
+```{r}
+# str_match(fruit, "a")
+```
+
+# String Length
+
+## str_length()
+
+return the width of the character string.
+```{r}
+fruit %>% str_length()
+
+# subsetting
+fruit[fruit %>% str_length()>10]
+```
+
+## str_pad()
+
+to get string with equal length
+```{r}
+fruit %>% str_pad(width = 10, pad = "F", side = "left")
+```
+
+
+## str_trunc
+
+truncate the width of string\
+almost similar to opposite of `str_pad`
+```{r}
+fruit %>% str_trunc(width = 7, side = "left", ellipsis = "fruit")
+
+# if the width more than ellipsis
+fruit %>% str_trunc(width = 6, side = "left", ellipsis = "fruit ")
+```
+in str_trunc, if width shouldn't less than ellipsis,\
+when the width and the ellipsis are equal, they will not be truncated, instead the ellipsis will mutated to the string
+
+
+## str_trim
+
+trim whitespaces from start and/or end of the string\
+```{r}
+# str_trim(fruit, side = "both" )
+```
+
+# String Mutating
+
+## str_sub()
+
+form:\
+`str_sub(string, star, end) < replacement`
+```{r}
+fruitexp <- fruit
+str_sub(fruitexp, 0, 0) <- "FRUIT "
+fruitexp %>% head(10)
+```
+
+## str_replace() & str_repalce_all
+
+replace the first matched pattern in each string\
+form:\
+`str_replace(string, pattern, replacement)`\
+\
+ str_replace_all will applied to all matched pattern 
+```{r}
+str_replace(fruit, "^a", "A")
+str_replace(fruit, "a", "A")
+
+str_replace_all(fruit, "a", "OKKK")
+```
+
+## str_to_lower/_upper/_tittle()
+
+convert strings to lower/upper/title case\
+
+
+
+
+
+
+
+
+
+
