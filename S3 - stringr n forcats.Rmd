@@ -22,6 +22,7 @@ load("./strings/strings.RData")
 detect a pattern match inside given string.\
 similar to base R `grepl`\
 in some circumstance this function would seems similar to `like` clause in SQL\
+
 ```{r}
 df <- ggplot2::mpg
 
@@ -41,11 +42,11 @@ fruit[str_detect(fruit, "a", negate = T)]
 data.frame(fruit) %>% filter(str_detect(fruit, "a"))
 ```
 
-
 ## str_which()
 
 locate the indexes of strings, which contain a pattern match\
 similar to base R `grep`
+
 ```{r}
 str_which(c("abcd", "pqrsa"), "a")
 ```
@@ -53,16 +54,17 @@ str_which(c("abcd", "pqrsa"), "a")
 ## str_count()
 
 count the number of pattern matches in given strings.
+
 ```{r}
 data.frame(fruit) %>% filter(str_count(fruit, "a") >= 2)
 ```
-
 
 ## str_locate() and str_locate_all()
 
 locate the position(s) of pattern match(es) in given string.\
 `str_locate`: position of the first match\
 `str_locate_all`: position of all matches
+
 ```{r}
 fruit.df %>% mutate(start= str_locate(fruit, pattern = "bl")[,"start"],
                     end = str_locate(fruit, pattern = "bl")[,"end"])
@@ -75,8 +77,10 @@ str_locate_all(fruit, "bla")
 # String Subsetting
 
 ## str_sub()
+
 similar to base R `substr()`\
 extract part part of a string from a character vector
+
 ```{r}
 str_sub(fruit, 1, 4) %>% tibble()
 
@@ -86,6 +90,7 @@ words %>% str_sub(1, 1) %>% tibble()
 ## str_subset()
 
 return only the strings that contain pattern match
+
 ```{r}
 str_subset(fruit, "bla")
 ```
@@ -93,19 +98,21 @@ str_subset(fruit, "bla")
 ## str_extract() & str_extract_all()
 
 return the first (or every) pattern match as a vector
+
 ```{r}
-str_extract(fruit, "app")
+str_extract(fruit, "app") %>% tibble()
 ```
 
 ```{r}
-# str_extract_all(fruit, "ap")
+str_extract_all(fruit, "ap") %>% tibble
 ```
 
 ## str_match() & str_match_all()
 
 return the first (or every) pattern match found in each string, as a matrix for each group in pattern.
+
 ```{r}
-# str_match(fruit, "a")
+str_match(fruit, "a") %>% tibble()
 ```
 
 # String Length
@@ -113,6 +120,7 @@ return the first (or every) pattern match found in each string, as a matrix for 
 ## str_length()
 
 return the width of the character string.
+
 ```{r}
 fruit %>% str_length()
 
@@ -123,28 +131,30 @@ fruit[fruit %>% str_length()>10]
 ## str_pad()
 
 to get string with equal length
+
 ```{r}
 fruit %>% str_pad(width = 10, pad = "F", side = "left")
 ```
-
 
 ## str_trunc
 
 truncate the width of string\
 almost similar to opposite of `str_pad`
+
 ```{r}
 fruit %>% str_trunc(width = 7, side = "left", ellipsis = "fruit")
 
 # if the width more than ellipsis
 fruit %>% str_trunc(width = 6, side = "left", ellipsis = "fruit ")
 ```
+
 in str_trunc, if width shouldn't less than ellipsis,\
 when the width and the ellipsis are equal, they will not be truncated, instead the ellipsis will mutated to the string
-
 
 ## str_trim
 
 trim whitespaces from start and/or end of the string\
+
 ```{r}
 # str_trim(fruit, side = "both" )
 ```
@@ -155,6 +165,7 @@ trim whitespaces from start and/or end of the string\
 
 form:\
 `str_sub(string, star, end) < replacement`
+
 ```{r}
 fruitexp <- fruit
 str_sub(fruitexp, 0, 0) <- "FRUIT "
@@ -167,24 +178,113 @@ replace the first matched pattern in each string\
 form:\
 `str_replace(string, pattern, replacement)`\
 \
- str_replace_all will applied to all matched pattern 
+str_replace_all will applied to all matched pattern
+
 ```{r}
 str_replace(fruit, "^a", "A")
 str_replace(fruit, "a", "A")
 
-str_replace_all(fruit, "a", "OKKK")
+str_replace_all(fruit, "a", "A")
 ```
 
-## str_to_lower/_upper/_tittle()
+## str_to_lower/\_upper/\_tittle()
 
 convert strings to lower/upper/title case\
 
+```{r}
+sentences.df$sentence <- str_to_upper(sentences.df$sentence)
+
+sentences.df <- sentences.df %>% mutate(sentence = str_to_lower(sentence))
+
+sentences.df$sentence <- str_to_title(sentences.df$sentence)
+```
+
+# joining and splitting strings
+
+## str_c()
+
+joining multiple strings into a single string
+
+```{r}
+exp <- fruit.df %>% mutate(`3 ahead` = str_sub(fruit.df$fruit, 1,3))
+
+exp %>% mutate(`full name` = str_c("fruit", exp$fruit, sep = " "))
 
 
+exp %>% mutate(`full name` = case_when(
+        str_detect(exp$fruit, "^[ab]") ~ str_c("buah a/b", exp$fruit, sep = " "),
+        T ~ str_c("buah selain a/b", exp$fruit, sep = " ")
+))
+```
 
+## str_dup()
 
+repeat a astring multiple times
 
+```{r}
+exp %>% mutate(`string duplicate` = str_dup(exp$`3 ahead`, 3))
+```
 
+## str_split_fixed / str_split
 
+split a vector of string into matrix of substrings (str_split - returns a list of substrings)
 
+```{r}
+str_split_fixed(sentences.df$sentence, " ", 2) %>% tibble
+```
 
+## str_glue()
+
+merge together strings and {expressions}
+
+```{r}
+str_glue("the {fruit[31]} result of 2 times 10 is {2*10}")
+
+fruit.df %>% mutate(details = str_glue("{fruit.df$fruit} is either sweet or not"))
+
+fruit.df %>% mutate(details = case_when(
+        str_detect(fruit, "^[abc]") ~ str_glue("{fruit.df$fruit} is sweet"),
+        T ~ str_glue("{fruit.df$fruit} is BAD"))) %>% tail()
+```
+
+## str_glue_data
+
+use a data.frame, list or environment to create string from strings and {expressions}
+
+```{r}
+str_glue_data(exp, "the fruit is {fruit} and the third first character is {`3 ahead`}") %>% tibble()
+```
+
+# string heper function
+
+## str_order()
+
+return a vector of indexes after character vector is sorted
+
+```{r}
+str_order(sentences) %>% tibble()
+
+# use subsetting to ordering value instead of indexes
+sentences[str_order(sentences)] %>% tibble()
+```
+
+## str_sort()
+
+return sorted value
+
+```{r}
+str_sort(sentences) %>% tibble()
+```
+
+## str_view() & str_view_all
+
+an html rendering function
+
+```{r}
+# install.packages("htmlwidgets")
+library(htmlwidgets)
+
+str_view("aku mau makan", "a")
+
+str_view_all("aku mau makan", "a")
+```
