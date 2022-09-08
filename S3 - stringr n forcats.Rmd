@@ -288,3 +288,92 @@ str_view("aku mau makan", "a")
 
 str_view_all("aku mau makan", "a")
 ```
+
+# Factors (forcats)
+
+## fct_count()
+
+count the number of value for each level
+```{r}
+dt <- mpg %>% mutate_at(.vars = c("manufacturer", "model", "trans", "class"), .funs = as.factor)
+
+fct_count(dt$manufacturer)
+
+dt %>% .$manufacturer %>% fct_count()
+```
+
+## fct_unique
+
+similar to base R `levels()`\
+return the unique values, removing duplicates
+```{r}
+dt %>% .$manufacturer %>% fct_unique()
+
+levels(dt$manufacturer)
+```
+
+# factor combine and order
+
+## fct_c()
+
+combine factors with different levels
+```{r}
+dt <- mpg %>% mutate_at(.vars = c("manufacturer", "model", "trans", "class"), .funs = as_factor)
+
+`list of manu` <- levels(dt$manufacturer)
+
+f1 <- `list of manu`[1:7] %>% as.factor()
+f2 <- `list of manu`[8:15] %>% as.factor()
+
+fct_c(f1, f2)
+```
+
+## fct_relevel()
+
+reordering factor level
+```{r}
+reorder <- sample(dt$manufacturer %>% fct_unique, size = length(dt$manufacturer %>% fct_unique()), replace = F) %>% as.character()
+
+dt <- dt %>% mutate(manufacturer = fct_relevel(manufacturer, reorder))
+
+levels(dt$manufacturer)
+```
+
+## fct_infreq()
+
+reorder levels by the frequency in which they appear in the data (highest freq.first)
+```{r}
+
+```
+
+## fct_inorder()
+
+reorder levels by order in which they appear in the data
+```{r}
+
+```
+
+## fct_rev()
+
+reverse level order
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
