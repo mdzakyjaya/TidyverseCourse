@@ -294,6 +294,7 @@ str_view_all("aku mau makan", "a")
 ## fct_count()
 
 count the number of value for each level
+
 ```{r}
 dt <- mpg %>% mutate_at(.vars = c("manufacturer", "model", "trans", "class"), .funs = as.factor)
 
@@ -306,6 +307,7 @@ dt %>% .$manufacturer %>% fct_count()
 
 similar to base R `levels()`\
 return the unique values, removing duplicates
+
 ```{r}
 dt %>% .$manufacturer %>% fct_unique()
 
@@ -317,6 +319,7 @@ levels(dt$manufacturer)
 ## fct_c()
 
 combine factors with different levels
+
 ```{r}
 dt <- mpg %>% mutate_at(.vars = c("manufacturer", "model", "trans", "class"), .funs = as_factor)
 
@@ -331,10 +334,12 @@ fct_c(f1, f2)
 ## fct_relevel()
 
 reordering factor level
+
 ```{r}
 reorder <- sample(dt$manufacturer %>% fct_unique, size = length(dt$manufacturer %>% fct_unique()), replace = F) %>% as.character()
 
-dt <- dt %>% mutate(manufacturer = fct_relevel(manufacturer, reorder))
+dt %>% mutate(manufacturer = fct_relevel(manufacturer, reorder)) %>% 
+        count(manufacturer)
 
 levels(dt$manufacturer)
 ```
@@ -342,38 +347,91 @@ levels(dt$manufacturer)
 ## fct_infreq()
 
 reorder levels by the frequency in which they appear in the data (highest freq.first)
-```{r}
 
+```{r}
+dt %>% mutate(manufacturer = fct_infreq(manufacturer)) %>%
+        count(manufacturer)
 ```
 
 ## fct_inorder()
 
 reorder levels by order in which they appear in the data
-```{r}
 
+```{r}
+dt %>% mutate(manufacturer = fct_inorder(manufacturer)) %>%
+        count(manufacturer)
 ```
 
 ## fct_rev()
 
 reverse level order
-```{r}
 
+```{r}
+levels(dt$manufacturer)
+levels(fct_rev(dt$manufacturer))
+
+levels(fct_rev(fct_infreq(dt$manufacturer)))
+```
+
+# factor value change and add or drop levels
+
+## fct_recode()
+
+manually change level
+```{r}
+dt %>% mutate(manufacturer = fct_recode(manufacturer,
+                                        Oh = 'audi',
+                                        yes = "chevrolet")) %>% 
+        count(manufacturer)
+```
+
+## fct_collapse()
+
+collapse levels into manually defined groups
+```{r}
+dt %>% mutate(manufacturer = fct_collapse(manufacturer,
+                                          `audi & ford` = c("audi", "ford"))) %>% count(manufacturer)
+```
+
+## fct_other()
+
+replace levels with other
+```{r}
+dt %>% mutate(manufacturer = fct_other(manufacturer, c("audi",
+                                                       "chevrolet",
+                                                       "ford",
+                                                       "dodge"))) %>% 
+        count(manufacturer)
+
+dt %>% mutate(manufacturer = fct_other(manufacturer, drop = c("audi",
+                                                       "chevrolet",
+                                                       "ford",
+                                                       "dodge"))) %>% 
+        count(manufacturer)
+```
+
+## fct_expand()
+
+add levels to a factor
+```{r}
+dt_expanded <- dt %>% mutate(manufacturer = fct_expand(manufacturer, c("NMAX", "XMAX", "VARIO")))
+
+dt_expanded %>% pull(manufacturer) %>% fct_count()
 ```
 
 
+## fct_drop()
+
+drop unused levels
+```{r}
+dt_expanded %>% mutate(manufacturer = fct_drop(manufacturer, c("XMAX"))) %>% pull(manufacturer) %>% fct_count()
+
+dt_expanded %>% mutate(manufacturer = fct_drop(manufacturer, c("XMAX", "NMAX", "VARIO"))) %>% pull(manufacturer) %>% fct_count()
+```
+
+## fct_explicit_na
+
+assigns a level to NAs to ensure they appear in plots
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# EXERCISE
