@@ -435,3 +435,266 @@ assigns a level to NAs to ensure they appear in plots
 
 
 # EXERCISE
+
+## Exercise 1
+First import corpus.txt into R. Use function readLines() for import, assign imported corpus
+to R object.\
+```{r}
+data <- read_lines("./corpus/corpus.txt")
+```
+First some warming up:\
+ check number of lines in corpus\
+ check number of characters\
+ print first and last six lines\
+```{r}
+# number of lines
+length(data)
+```
+
+```{r}
+# number of characters
+str_length(data) %>% tibble() %>% sum(.)
+```
+
+```{r}
+# top 6 and last 6 lines
+head(data)
+tail(data)
+```
+
+Now use regular expressions and tools provided by stringr library to finish given tasks:\
+ count how many lines include at least one punctuation\
+```{r}
+data %>% str_detect(pattern = "[:punct:]") %>% sum()
+```
+
+ show first 20 lines without any punctuation\
+```{r}
+data %>% str_detect(pattern = "[:punct:]", negate = T) %>% sum()
+
+data[data %>% str_detect(pattern = "[:punct:]", negate = T)] %>% head()
+data %>% str_subset("[:punct:]", negate = T) %>% head()
+```
+
+ count how many lines include at least one number / digit\
+```{r}
+data %>% str_detect("[:digit:]") %>% sum()
+```
+
+ inspect first 10 lines with digit present\
+```{r}
+data[data %>% str_detect("[:digit:]")] %>% head(10)
+```
+
+ find string patterns that resemble phone numbers (search for patterns: ddd-dddd where
+d = digit 0-9)\
+```{r}
+data %>% str_detect("(\\d{3})[-](\\d{4})") %>% sum()
+
+data[data %>% str_detect("(\\d{3})[-](\\d{4})")] %>% head()
+data %>% str_subset("(\\d{3})[-](\\d{4})") %>% str_view_all("(\\d{3})[-](\\d{4})")
+```
+
+ find string patterns that resemble dollar signs ”$” (escaping needed)\
+```{r}
+data %>% str_detect("\\$") %>% sum()
+
+data %>% str_subset("\\$") %>% head() %>% str_view_all("\\$")
+```
+
+ how many lines starts with word ”The”?\
+```{r}
+data %>% str_detect("^[Tt]he") %>% sum()
+data[data %>% str_detect("^[Tt]he")] %>% head()
+```
+
+## Exercise 2
+
+Continue with strings manipulations:\
+ use corpus and try to figure out which words usually come before comma ”,”
+```{r}
+data %>% str_subset("\\w+,") %>% head
+
+data %>% 
+        str_extract("\\w+,") %>%
+        str_to_lower() %>% 
+        str_remove(",") %>%
+        tibble(kata = .) %>% 
+        count(kata) %>% 
+        arrange(desc(n))
+
+# the same approach
+data %>% 
+        str_extract("\\w{1,},") %>%
+        str_to_lower() %>% 
+        str_remove(",") %>%
+        tibble(kata = .) %>% 
+        count(kata) %>% 
+        arrange(desc(n))
+```
+
+ if you consider first 5 letters at the beginning of each line, what are the top patterns that
+lines start with?
+```{r}
+data %>% str_starts("\\w{1,6} ") %>% head()
+data[data %>% str_starts("\\w{1,6} ")] %>% head()
+
+data %>% str_starts("[:alpha:]{5}") %>% head()
+
+data[data %>% str_starts("[:alpha:]{5} ")] %>% head() %>% str_view("[:alpha:]{5} ")
+data[data %>% str_starts("^[:alpha:]{5} ")] %>% head() %>% str_view_all("^[:alpha:]{5} ")
+
+data %>% 
+        str_extract("^(\\w{5} )") %>%
+        str_to_lower() %>% 
+        str_remove(" ") %>% 
+        tibble(awalan = .) %>% 
+        count(awalan) %>% 
+        arrange(desc(n))
+
+data %>% 
+        str_extract("^(\\w{1,} )") %>%
+        str_to_lower() %>%
+        str_remove(" ") %>%
+        tibble(awalan = .) %>% 
+        count(awalan) %>% 
+        arrange(desc(n))
+
+data %>% 
+        str_sub(1,5) %>% 
+        str_to_lower() %>% 
+        tibble(pola = .) %>%
+        count(pola, sort = T)
+```
+
+ find words where: a vowel is followed by a vowel
+```{r}
+data %>% str_subset("[aiueo]{2}") %>% head() %>% str_view_all("[aiueo]{2}")
+
+data %>% 
+        str_extract("\\w+[aiueo]{2}\\w+") %>%
+        str_to_lower() %>% 
+        tibble(vowel = .) %>% 
+        count(vowel, sort = T) %>% 
+        tibble()
+```
+
+ find words where: a vowel is followed by two or more vowels
+```{r}
+# find the lines
+data %>% 
+        str_subset("\\w+[aiueo]{3,}\\w+") %>% 
+        head(15) %>% 
+        str_view_all("\\w+[aiueo]{3,}\\w+")
+
+# fint the words
+tes <- data %>% 
+        str_extract("\\w+[aiueo]{3,}\\w+") %>%
+        str_to_lower() %>% 
+        tibble(pola = .)
+
+tes[!is.na(tes$pola),] %>% count(pola, sort = T)
+
+# find why louis most occurance
+data %>% str_to_lower() %>% str_subset("louis") %>% str_view_all("louis")
+```
+
+ find words where: 2 vowels are not followed by a vowel
+```{r}
+# make a view to see the correctness of the syntax
+data %>% 
+        str_subset(" \\w*[aiueo]{2}[^(aiueo)]* ") %>%
+        head(15) %>% 
+        str_view_all(" \\w*[aiueo]{2}[^(aiueo)]* ")
+
+data %>% 
+        str_extract_all(" \\w*[aiueo]{2}[^(aiueo)]* ") %>%
+        unlist() %>% 
+        str_to_lower() %>%
+        str_replace(" ", "") %>% 
+        str_remove_all(" .*") %>% 
+        tibble(pola = .) %>% 
+        count(pola, sort = T)
+```
+
+ check occurrence of words ”the”, ”be”, ”to”, ”of”, ”and” (most common words counts)
+```{r}
+data %>% 
+        str_extract_all("the|be|to|of|and") %>%
+        unlist() %>% 
+        str_to_lower() %>% 
+        tibble(pola = .) %>% 
+        count(pola, sort = T)
+
+# onother way
+data %>% str_count("and") %>% sum()
+
+hitung <- function(kata){
+        return(data %>% str_count(pattern = kata) %>% sum())
+        }
+
+hitung("and|the|to|be|of")
+```
+
+ most common words counts: sort words by their frequency!
+```{r}
+data %>% 
+        str_extract_all("\\b[A-Za-z]+\\b") %>%
+        unlist() %>% 
+        str_to_lower() %>% 
+        unlist() %>% 
+        tibble(kata = .) %>% 
+        count(kata, sort = T)
+```
+
+ most common words counts: before pattern match convert corpus to lower case!
+```{r}
+data %>% 
+        str_extract_all("\\b[A-Za-z]+\\b") %>%
+        unlist() %>% 
+        str_to_lower() %>% 
+        unlist() %>% 
+        tibble(kata = .) %>% 
+        count(kata, sort = T)
+```
+
+ inside most common words counts find top 3 most common words
+```{r}
+data %>% 
+        str_extract_all("\\b[A-Za-z]+\\b") %>%
+        unlist() %>% 
+        str_to_lower() %>% 
+        unlist() %>% 
+        tibble(kata = .) %>% 
+        count(kata, sort = T) %>% 
+        head(3)
+```
+
+ top 3 most common words check: number of lines only one word is present
+```{r}
+top3 <- data %>% 
+        str_extract_all("\\b[A-Za-z]+\\b") %>%
+        unlist() %>% 
+        str_to_lower() %>% 
+        unlist() %>% 
+        tibble(kata = .) %>% 
+        count(kata, sort = T) %>% 
+        head(3)
+
+top3[,1] %>% unlist(use.names = F)
+
+data.low
+```
+
+ top 3 most common words check: number of lines 2 words are present
+ top 3 most common words check: number of lines all three words are present
+ top 3 most common words check: also add percentage % of lines for each given scenario!
+
+
+
+
+
+
+
+
+
